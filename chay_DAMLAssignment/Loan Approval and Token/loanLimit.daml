@@ -1,0 +1,14 @@
+template LoanLimit
+    with
+        bank: Party
+        maxLimit: Decimal
+        usedLimit: Decimal
+    where
+        signatory bank
+        -- Function to update the used limit after a loan is approved
+        nonconsuming UpdateLimit : ContractId LoanLimit
+        with
+            amount : Decimal
+        do
+            assertMsg "Loan exceeds max limit" (usedLimit + amount <= maxLimit)
+            return self with usedLimit = usedLimit + amount

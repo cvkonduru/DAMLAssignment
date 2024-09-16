@@ -1,0 +1,6 @@
+template Token
+    with 
+        owner: Party
+        amount: Decimal
+    where
+        signatory owner

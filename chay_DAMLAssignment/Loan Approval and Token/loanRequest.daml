@@ -1,0 +1,21 @@
+template LoanRequest
+  with
+    borrower : Party
+    bank : Party
+    amount : Decimal
+  where
+    signatory borrower
+
+    controller bank can
+      ApproveRequest : (ContractId Loan, ContractId Token)
+        with
+          loanLimitCid : ContractId LoanLimit
+        do
+          loanLimit <- fetch loanLimitCid
+          -- Validate that the requested amount is within the loan limit
+          exercise loanLimitCid UpdateLimit with amount
+          archive self
+          -- Create Loan and Token contracts upon approval
+          loan <- create Loan with borrower, bank, amount, disbursedAmount = 0.0
+          token <- create Token with owner = borrower, amount
+          return (loan, token)

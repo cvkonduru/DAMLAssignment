@@ -1,0 +1,28 @@
+testLoanApprovalAndDisbursement = scenario do
+  -- Parties
+  borrower <- getParty "Borrower"
+  bank <- getParty "Bank"
+
+  -- Step 1: Create LoanLimit contract
+  loanLimit <- submit bank do
+    createCmd LoanLimit with bank, maxLimit = 1000.0, usedLimit = 0.0
+
+  -- Step 2: Create LoanRequest contract
+  loanRequest <- submit borrower do
+    createCmd LoanRequest with borrower, bank, amount = 500.0
+
+  -- Step 3: Approve the LoanRequest
+  (loan, token) <- submit bank do
+    exerciseCmd loanRequest (ApproveRequest loanLimit)
+
+  -- Step 4: Disburse tokens to the borrower
+  disbursedToken <- submit borrower do
+    exerciseCmd loan (Disburse with disburseAmount = 200.0)
+
+  -- Query and assert conditions
+  loanDetails <- queryContractId @Loan loan
+  assert (loanDetails.amount == 500.0)
+  assert (loanDetails.disbursedAmount == 200.0)
+
+  tokenDetails <- queryContractId @Token disbursedToken
+  assert (tokenDetails.amount == 200.0)

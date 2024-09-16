@@ -1,0 +1,13 @@
+template LoanLimit
+  with
+    bank : Party
+    maxLimit : Decimal
+    usedLimit : Decimal
+  where
+    signatory bank
+
+    nonconsuming ReduceUtilizedLimit : ContractId LoanLimit
+      with
+        amount : Decimal
+      do
+        return self with usedLimit = usedLimit - amount

@@ -1,0 +1,18 @@
+template Loan
+  with
+    borrower : Party
+    bank : Party
+    amount : Decimal
+    disbursedAmount : Decimal
+  where
+    signatory borrower, bank
+
+    controller borrower, bank can
+      Disburse : ContractId Token
+        with
+          disburseAmount : Decimal
+        do
+          -- Ensure total disbursed amount doesn't exceed the loan amount
+          assertMsg "Disburse amount exceeds loan amount" (disbursedAmount + disburseAmount <= amount)
+          create Token with owner = borrower, amount = disburseAmount
+          return self with disbursedAmount = disbursedAmount + disburseAmount

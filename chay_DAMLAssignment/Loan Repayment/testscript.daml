@@ -1,0 +1,24 @@
+testLoanRepayment = scenario do
+  -- Parties
+  borrower <- getParty "Borrower"
+  bank <- getParty "Bank"
+
+  -- Step 1: Create RepaymentRestriction contract
+  repaymentRestriction <- submit bank do
+    createCmd RepaymentRestriction with bank, minRepaymentAmount = 50.0
+
+  -- Step 2: Create Loan contract (disbursement has been done)
+  loan <- submit bank do
+    createCmd Loan with borrower, bank, amount = 500.0, disbursedAmount = 500.0, repaidAmount = 0.0
+
+  -- Step 3: Make a partial repayment (100.0)
+  partiallyRepaidLoan <- submit borrower do
+    exerciseCmd loan (Repay with repayment = 100.0, repaymentRestrictionCid = repaymentRestriction)
+
+  -- Step 4: Make another partial repayment (400.0 to fully repay the loan)
+  submit borrower do
+    exerciseCmd partiallyRepaidLoan (Repay with repayment = 400.0, repaymentRestrictionCid = repaymentRestriction)
+
+  -- Verify loan repayment
+  loanQuery <- queryContractId @Loan loan
+  assertMsg "Loan should be archived after full repayment" (isNone loanQuery)

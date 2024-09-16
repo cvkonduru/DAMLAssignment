@@ -1,0 +1,25 @@
+setup: Scenario ()
+setup: scenario do
+    -- Get Parties
+    borrower <- getParty "Borrower"
+    bank <- getParty "Bank"
+
+    -- Create a LoanRequest contract by the borrower
+    loanRequest <- submit borrower do
+        createCmd LoanRequest with
+            borrower = borrower
+            bank = bank
+            amount = 500.0
+    
+    -- The bank approved the loan LoanRequest
+    loan <- submit bank do
+        exerciseCmd loanRequest ApproveRequest
+
+    -- Query the created Loan contract
+    loanDetails <- queryContractId @Loan loan
+
+    -- Check that the loan amount is correct
+    asset (loanDetails.amount == 500.0)
+    -- Verify that both borrower and bank are signatories
+    assert (loanDetails.borrower == borrower)
+    assert (loanDetails.bank == bank)

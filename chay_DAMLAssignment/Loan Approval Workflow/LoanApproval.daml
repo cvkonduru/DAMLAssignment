@@ -1,0 +1,16 @@
+template LoanRequest
+    with
+        borrower: Party
+        bank: Party
+        amount: Decimal
+    where
+        signatory borrower
+
+        controller bank can
+            ApproveRequest: ContractId Loan
+                do
+                -- Archive the Loan Request upon approval
+                archive self
+                -- Create a new loan ContractId
+                create Loan with borrower, bank, amount
+

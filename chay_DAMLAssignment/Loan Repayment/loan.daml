@@ -1,0 +1,33 @@
+template Loan
+  with
+    borrower : Party
+    bank : Party
+    amount : Decimal
+    disbursedAmount : Decimal
+    repaidAmount : Decimal
+  where
+    signatory borrower, bank
+
+    -- The borrower makes a repayment
+    controller borrower can
+      Repay : ContractId Loan
+        with
+          repayment : Decimal
+          repaymentRestrictionCid : ContractId RepaymentRestriction
+        do
+          -- Fetch the repayment restriction
+          repaymentRestriction <- fetch repaymentRestrictionCid
+          -- Ensure the repayment is greater than or equal to the minimum repayment amount
+          assertMsg "Repayment below minimum amount" (repayment >= repaymentRestriction.minRepaymentAmount)
+          let newRepaidAmount = repaidAmount + repayment
+          -- Ensure that the total repaid amount doesn't exceed the disbursed amount
+          assertMsg "Repayment exceeds loan amount" (newRepaidAmount <= disbursedAmount)
+          
+          -- If the full amount is repaid, archive the loan contract
+          if newRepaidAmount == disbursedAmount
+            then do
+              archive self
+              return self
+            else
+              -- Return an updated contract with the new repaid amount
+              return self with repaidAmount = newRepaidAmount
